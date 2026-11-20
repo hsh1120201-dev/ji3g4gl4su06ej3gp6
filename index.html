@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#031413">
+<title>計畫活動時程電視看板</title>
+<style id="app-style">
+:root{
+  --bg:#031413;
+  --bg2:#051d1b;
+  --line:#0d6e68;
+  --line-soft:rgba(54,183,177,.26);
+  --cyan:#86f7ff;
+  --cyan-strong:#4cf6ff;
+  --text:#f2ffff;
+  --muted:#8ad9d9;
+  --panel:rgba(6,22,24,.85);
+  --red:#ff4a4a;
+  --yellow:#ffd33d;
+  --green:#20da87;
+  --font:32px;
+  --row-gap:2px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:radial-gradient(circle at top,#072322 0%,#031413 52%,#01090a 100%);color:var(--text)}
+body{overflow:hidden}
+button,input,select,textarea{font:inherit}
+#tv{height:100dvh;width:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;background:
+  linear-gradient(180deg,rgba(40,255,237,.08),transparent 18%),
+  radial-gradient(circle at 50% -5%,rgba(0,255,242,.10),transparent 34%),
+  radial-gradient(circle at 50% 110%,rgba(0,255,213,.06),transparent 28%),
+  linear-gradient(180deg,#041817 0%,#021111 100%)}
+#tv::before{content:"";position:absolute;inset:0;pointer-events:none;background:
+  linear-gradient(rgba(125,255,245,.045) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(125,255,245,.03) 1px,transparent 1px);
+  background-size:100% 48px,48px 100%;opacity:.25}
+#tv::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 140px rgba(0,0,0,.55),inset 0 0 22px rgba(75,255,243,.18)}
+.topline,.bottomline{height:2px;flex-shrink:0;background:linear-gradient(90deg,transparent,rgba(120,255,247,.58),transparent);box-shadow:0 0 12px rgba(96,251,255,.45)}
+.page-head{position:relative;z-index:1;height:clamp(70px,10vh,112px);padding:0 26px 0 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(89,239,234,.22);background:linear-gradient(180deg,rgba(6,24,24,.92),rgba(4,16,16,.76))}
+.title-group{display:flex;align-items:center;gap:14px;min-width:0}
+.title-flag{font-size:clamp(28px,2vw,42px);filter:drop-shadow(0 0 8px rgba(76,246,255,.9))}
+.page-title{font-size:clamp(28px,2.7vw,54px);font-weight:900;letter-spacing:.08em;color:#dffeff;text-shadow:0 0 18px rgba(87,247,255,.45),0 0 4px rgba(87,247,255,.5);cursor:pointer;white-space:nowrap}
+.head-tools{display:flex;align-items:center;gap:16px}
+.page-count{font-size:clamp(18px,1.2vw,28px);color:#d1ffff;opacity:.92;white-space:nowrap}
+.clock-box{min-width:min(28vw,420px);padding:10px 18px;border:1px solid rgba(77,252,255,.55);border-radius:14px;background:linear-gradient(180deg,rgba(13,31,36,.96),rgba(5,22,28,.88));box-shadow:0 0 16px rgba(77,252,255,.22),inset 0 0 16px rgba(77,252,255,.08);font-size:clamp(20px,1.8vw,42px);font-weight:900;font-variant-numeric:tabular-nums;color:var(--cyan);text-shadow:0 0 16px rgba(76,246,255,.28);white-space:nowrap;text-align:center}
+.admin-entry{padding:8px 14px;border-radius:10px;border:1px solid rgba(115,255,244,.28);background:rgba(18,46,46,.58);color:#dbffff;opacity:.18;transition:opacity .2s,transform .2s;cursor:pointer}
+.admin-entry:hover,.admin-entry:focus{opacity:1;transform:translateY(-1px)}
+.rows{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;min-height:0}
+.row{position:relative;display:grid;grid-template-columns:minmax(300px,1.1fr) minmax(0,4.4fr) minmax(200px,.95fr);gap:18px;align-items:center;min-height:0;flex:1;padding:14px 22px;border-bottom:1px solid rgba(96,255,241,.18);background:linear-gradient(90deg,rgba(0,255,221,.04),rgba(0,0,0,0) 14%,rgba(0,255,200,.02) 72%,rgba(0,0,0,0) 100%)}
+.row:nth-child(odd){background:linear-gradient(90deg,rgba(0,255,221,.045),rgba(0,0,0,0) 18%,rgba(0,255,200,.025) 72%,rgba(0,0,0,0) 100%)}
+.row::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,255,214,.03),transparent 45%,rgba(0,255,214,.015));pointer-events:none}
+.project-cell{display:flex;align-items:center;gap:18px;min-width:0;padding-left:4px}
+.project-icon{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;font-size:34px;background:linear-gradient(180deg,rgba(35,237,255,.18),rgba(0,122,124,.18));border:1px solid rgba(118,255,248,.35);box-shadow:inset 0 0 10px rgba(130,255,251,.18),0 0 12px rgba(69,241,255,.15);flex-shrink:0}
+.project-meta{min-width:0}
+.name{font-size:clamp(20px,2.3vw,var(--font));font-weight:900;color:#efffff;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 12px rgba(104,255,246,.12)}
+.tagline{margin-top:6px;font-size:clamp(13px,1.25vw,24px);font-weight:700;color:var(--cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.96}
+.activity{position:relative;min-width:0;padding:0 10px 0 2px}
+/* The first and last nodes share identical endpoints in every project row. */
+.timeline{display:flex;justify-content:space-between;align-items:flex-start;gap:0;width:100%;min-width:0;padding:0 64px;position:relative;container-type:inline-size}
+.timeline.single-point{justify-content:center}
+.timeline:not(.single-point)::before{content:"";position:absolute;left:64px;right:64px;top:38px;height:3px;background:repeating-linear-gradient(to right,rgba(145,231,245,.92) 0 8px,transparent 8px 16px);opacity:.8}
+
+.milestone-point{position:relative;display:flex;flex:0 0 0px;width:0;flex-direction:column;align-items:center;text-align:center;gap:8px;min-width:0}
+.milestone-point::before{content:"";position:absolute;right:0;width:calc((100cqw) / (var(--milestone-count) - 1));top:38px;height:3px;opacity:0;z-index:0}
+.milestone-point.past::before,.milestone-point.solid-before::before{background:linear-gradient(90deg,var(--red),#ff7979);opacity:1}
+.milestone-point:first-child::before{display:none}
+.milestone-date{width:clamp(66px,calc((100cqw) / var(--milestone-count)),180px);font-size:clamp(14px,1.3vw,24px);font-weight:900;font-variant-numeric:tabular-nums;color:#eefeff;white-space:nowrap;text-shadow:0 0 10px rgba(255,255,255,.08)}
+.milestone-node{width:28px;height:28px;border-radius:50%;background:rgba(122,244,245,.2);border:1px solid rgba(150,243,248,.72);box-shadow:0 0 0 4px rgba(95,223,235,.06),0 0 15px rgba(133,241,244,.14);position:relative;z-index:1;flex-shrink:0}
+.milestone-name{width:112px;max-width:none;flex-shrink:0;font-size:clamp(12px,1.18vw,22px);font-weight:800;color:#eafefe;line-height:1.25;min-height:2.4em;white-space:normal;word-break:normal;overflow-wrap:break-word}
+.milestone-point.past .milestone-node{background:radial-gradient(circle at 35% 35%,#ff7e7e 0%,var(--red) 54%,#b40018 100%);border-color:#ffc2c2;box-shadow:0 0 18px rgba(255,83,83,.55)}
+.milestone-point.current .milestone-node,.milestone-point.warning .milestone-node,.milestone-point.urgent .milestone-node{background:radial-gradient(circle at 35% 35%,#fff4a8 0%,var(--yellow) 56%,#d1a300 100%);border-color:#fff3b7;box-shadow:0 0 20px rgba(255,210,58,.6)}
+.milestone-point.final .milestone-node,.milestone-point.future-green .milestone-node{background:radial-gradient(circle at 35% 35%,#abffd1 0%,var(--green) 56%,#007e4c 100%);border-color:#c3ffe1;box-shadow:0 0 18px rgba(32,218,135,.55)}
+.milestone-point.current .milestone-date,.milestone-point.warning .milestone-date,.milestone-point.urgent .milestone-date{color:#fff7ae}
+.milestone-point.final .milestone-date,.milestone-point.future-green .milestone-date{color:#d1ffe9}
+.timeline-animal{position:absolute;left:var(--animal-pos,50%);top:34px;transform:translate(-50%,-50%);z-index:3;display:flex;align-items:center;gap:0;pointer-events:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))}
+.timeline-animal .animal-body{font-size:clamp(38px,3vw,60px);line-height:1;animation:none;display:inline-block}
+@keyframes animalRun{from{transform:translateY(-2px) rotate(-2deg)}to{transform:translateY(2px) rotate(2deg)}}
+.status-wrap{display:flex;justify-content:flex-end;align-items:center;padding-right:4px}
+.remaining-badge{min-width:182px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 18px 14px 22px;border-radius:22px;background:linear-gradient(90deg,rgba(18,14,14,.82),rgba(43,18,18,.72));border:1px solid rgba(255,255,255,.08);box-shadow:0 0 18px rgba(255,80,80,.12),inset 0 0 18px rgba(255,255,255,.02)}
+.remaining-text{font-size:clamp(18px,2vw,34px);font-weight:900;letter-spacing:.08em;white-space:nowrap}
+.status-dot{width:46px;height:46px;border-radius:50%;flex-shrink:0;border:1px solid rgba(255,255,255,.35);box-shadow:0 0 18px currentColor,inset 0 0 14px rgba(255,255,255,.14)}
+.remaining-badge.red{background:linear-gradient(90deg,rgba(36,15,16,.92),rgba(68,16,19,.74));color:var(--red)}
+.remaining-badge.red .remaining-text{text-shadow:0 0 18px rgba(255,88,88,.3)}
+.remaining-badge.red .status-dot{background:var(--red);color:var(--red)}
+.remaining-badge.yellow{background:linear-gradient(90deg,rgba(33,31,11,.92),rgba(77,64,10,.72));color:var(--yellow)}
+.remaining-badge.yellow .remaining-text{text-shadow:0 0 18px rgba(255,212,61,.28)}
+.remaining-badge.yellow .status-dot{background:var(--yellow);color:var(--yellow)}
+.remaining-badge.green{background:linear-gradient(90deg,rgba(11,34,26,.92),rgba(10,70,48,.68));color:var(--green)}
+.remaining-badge.green .remaining-text{text-shadow:0 0 18px rgba(32,218,135,.26)}
+.remaining-badge.green .status-dot{background:var(--green);color:var(--green)}
+.remaining-badge.gray{background:linear-gradient(90deg,rgba(22,28,30,.92),rgba(44,52,58,.72));color:#b3c7cf}
+.remaining-badge.gray .status-dot{background:#94a3b8;color:#94a3b8;box-shadow:none}
+.empty{display:grid;place-items:center;flex:1;font-size:clamp(24px,2vw,36px);font-weight:800;color:#9ad9d8;letter-spacing:.08em}
+.ticker{position:relative;z-index:1;height:clamp(44px,6vh,72px);flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 20px;background:linear-gradient(180deg,rgba(2,20,18,.94),rgba(4,27,24,.94));border-top:1px solid rgba(79,255,243,.24);color:#d6ffff;font-weight:900;font-size:clamp(15px,1.4vw,26px);white-space:nowrap;overflow:hidden}
+.ticker .speaker{font-size:clamp(18px,1.6vw,30px);filter:drop-shadow(0 0 6px rgba(71,245,255,.5));flex-shrink:0}
+/* Two identical, viewport-filling groups make the loop continuous from frame one. */
+.ticker-track{flex:1;min-width:0;overflow:hidden;position:relative;line-height:1.6}
+.ticker-content{display:flex;align-items:center;width:max-content;white-space:nowrap;will-change:transform;animation:tickerLoop var(--ticker-duration,24s) linear infinite}
+.ticker-group,.ticker-item{display:flex;align-items:center;flex:0 0 auto;white-space:nowrap}
+.ticker-divider{display:inline-block;padding:0 24px;color:#86f7ff}
+@keyframes tickerLoop{from{transform:translateX(0)}to{transform:translateX(calc(-1 * var(--ticker-distance,0px)))}}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.ticker-status{min-height:1.7em;margin:10px 0 0;font-size:13px;line-height:1.7;color:#b6dcdb}
+.ticker-status[data-state="success"]{color:#92f5c7}
+.ticker-status[data-state="dirty"],.ticker-status[data-state="warning"]{color:#ffe198}
+.ticker-status[data-state="error"]{color:#ffadaf}
+.storage-warning{max-width:1260px;margin:0 auto 16px;padding:14px 18px;background:#35261b;border:1px solid #956b42;border-radius:10px;color:#ffe4b5;line-height:1.7}
+.storage-warning[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){.ticker-content{animation:none}}
+
+#admin{position:fixed;inset:0;overflow:auto;background:#091211;color:#edf7f7;z-index:8;padding:22px;display:none}
+#admin.open{display:block}
+body.admin-mode #tv{display:none}
+.admin-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;max-width:1260px;margin:0 auto 18px}
+.admin-head h1{font-size:26px;margin:0 0 8px;color:#f1ffff}
+.panel{max-width:1260px;margin:0 auto 16px;background:#12201e;border:1px solid #2b4340;border-radius:14px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.panel h2{font-size:17px;margin:0 0 14px;color:#efffff}
+.formgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font-size:12px;color:#c8dddd}
+input,select,textarea{width:100%;min-width:0;background:#071111;color:white;border:1px solid #39504e;border-radius:8px;padding:10px;min-height:40px}
+textarea{min-height:72px;resize:vertical}
+button{border:0;border-radius:8px;background:#178960;color:white;font-weight:750;padding:10px 14px;cursor:pointer}
+button.secondary{background:#273938;border:1px solid #415b58}
+button.danger{background:#723137}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+.tablewrap{overflow-x:auto}
+.project-admin{border:1px solid #2c4542;border-radius:10px;margin:10px 0;overflow:hidden}
+.project-admin-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;background:#172928}
+/* Sort projects from the admin list; TV pages follow this saved array order. */
+.project-admin[draggable="true"]{transition:border-color .15s,opacity .15s}
+.project-admin.dragging{opacity:.42}
+.project-admin.drop-before{box-shadow:inset 0 4px 0 #4cf6ff;border-top-color:#4cf6ff}
+.project-admin.drop-after{box-shadow:inset 0 -4px 0 #4cf6ff;border-bottom-color:#4cf6ff}
+.drag-handle{cursor:grab;touch-action:pan-y;user-select:none;font-size:22px!important;color:#86f7ff;padding:4px 7px;border:1px solid #46645f;border-radius:7px;line-height:1.2}
+.drag-handle:active{cursor:grabbing}
+.sort-controls{display:inline-flex;gap:4px;align-items:center}
+.sort-controls button{padding:6px 9px;font-size:12px}
+.sort-controls button:disabled{opacity:.3;cursor:not-allowed}
+.sort-status{min-height:1.5em}
+
+.project-admin-head .project-admin-title{display:flex;align-items:center;gap:10px;min-width:0}
+.project-admin-head .project-admin-title span{font-size:22px}
+.project-admin-head strong{font-size:15px}
+.milestone-list{padding:0 12px}
+.milestone{display:grid;grid-template-columns:minmax(150px,1.5fr) minmax(150px,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #2b3e3b}
+.milestone:last-child{border-bottom:0}
+.milestone .actions button{padding:7px 10px;font-size:12px}
+.settings{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.settings label{display:block;font-size:13px;color:#c8dddd;margin-bottom:7px}
+.settings input[type=range]{padding:0;min-height:0;accent-color:#20da87}
+.note{font-size:12px;color:#abc0bf;line-height:1.7;margin-top:10px}
+.lightmini{display:inline-flex;align-items:center;gap:8px}
+.lightmini .light{width:14px;height:14px;border-radius:50%;display:inline-block;box-shadow:0 0 10px currentColor}
+.light.red{background:var(--red);color:var(--red)}
+.light.yellow{background:var(--yellow);color:var(--yellow)}
+.light.green{background:var(--green);color:var(--green)}
+.light.gray{background:#94a3b8;color:#94a3b8;box-shadow:none}
+@media (max-width:1200px){
+  .row{grid-template-columns:minmax(240px,1fr) minmax(0,3.7fr) minmax(170px,.88fr);gap:12px;padding-inline:16px}
+  /* Endpoint placement is independent of the number of activities. */
+  .remaining-badge{min-width:150px;padding:12px 14px 12px 18px}
+  .status-dot{width:38px;height:38px}
+}
+@media (max-width:880px){
+  .page-head{padding-inline:16px;gap:12px}
+  .clock-box{min-width:auto;font-size:18px;padding:8px 12px}
+  .row{grid-template-columns:1fr;align-items:start;padding:12px 16px}
+  .status-wrap{justify-content:flex-start;padding-right:0}
+  .timeline{padding-left:54px;padding-right:54px}
+  .timeline:not(.single-point)::before{left:54px;right:54px}
+  .milestone-point::before{width:calc((100cqw) / (var(--milestone-count) - 1))}
+  .milestone-date{width:clamp(80px,calc((100cqw) / var(--milestone-count)),180px)}
+  .milestone-name{width:112px}
+  .formgrid{grid-template-columns:1fr 1fr}
+  .settings{grid-template-columns:1fr}
+}
+@media (max-width:620px){
+  .page-title{font-size:24px}
+  .page-count{display:none}
+  .project-cell{gap:12px}
+  .project-icon{width:46px;height:46px;font-size:28px}
+  .timeline{padding-left:42px;padding-right:42px}
+  .timeline:not(.single-point)::before{left:42px;right:42px;top:32px}
+  .milestone-point::before{width:calc((100cqw) / (var(--milestone-count) - 1))}
+  .milestone-date{width:clamp(76px,calc((100cqw) / var(--milestone-count)),150px)}
+  .milestone-name{width:92px}
+  .milestone-node{width:22px;height:22px}
+  .milestone-point::before{top:32px}
+  .timeline-animal{top:28px}
+  .timeline-animal .animal-body{font-size:32px}
+  .remaining-badge{min-width:132px;border-radius:18px}
+}
+
+/* Each project has its own saved animal; there is no cloud/dust layer. */
+.animal-picker{display:flex;align-items:center;gap:10px;min-width:0}
+.animal-picker select{flex:1;min-width:0}
+.animal-preview{display:grid;place-items:center;width:44px;height:42px;flex-shrink:0;font-size:28px;border:1px solid #365750;border-radius:9px;background:#0b1916}
+.project-form-actions{grid-column:1/-1!important;justify-content:flex-start;align-items:center}
+.project-animal-settings{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px;background:#0e1c1a;border-top:1px solid #2b3e3b;border-bottom:1px solid #2b3e3b}
+.quick-animal-field{display:flex;align-items:center;gap:12px;font-size:13px;color:#d8edeb}
+.quick-animal-field select{width:205px;max-width:100%;padding:8px 10px;min-height:38px}
+.animal-save-status,.project-save-status{font-size:13px;line-height:1.6;color:#abc0bf}
+.animal-save-status[data-state="success"],.project-save-status[data-state="success"]{color:#8ff0bf}
+.animal-save-status[data-state="warning"],.project-save-status[data-state="warning"]{color:#ffe18a}
+.project-save-status{margin:8px 0 0}
+@media(max-width:620px){.quick-animal-field{flex-wrap:wrap;gap:8px}.project-animal-settings{gap:8px}.animal-save-status{width:100%}}
+
+/* Website version: shared-save status, in-page dialogs (browser confirm/alert are blocked), toast. */
+.sync-status{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:6px 12px;border-radius:999px;font-size:13px;line-height:1.5;background:#0e1c1a;border:1px solid #2b4340;color:#c8dddd}
+.sync-status::before{content:"";width:9px;height:9px;border-radius:50%;background:#94a3b8;flex-shrink:0}
+.sync-status[data-state="online"]::before,.sync-status[data-state="saved"]::before{background:var(--green)}
+.sync-status[data-state="pending"]::before{background:var(--yellow)}
+.sync-status[data-state="readonly"]::before,.sync-status[data-state="local"]::before{background:#86f7ff}
+.sync-status[data-state="error"]{border-color:#7a3a3f;color:#ffc9cb}
+.sync-status[data-state="error"]::before{background:var(--red)}
+.modal-back{position:fixed;inset:0;z-index:30;display:none;place-items:center;padding:20px;background:rgba(0,8,8,.72)}
+.modal-back.open{display:grid}
+.modal{width:min(480px,100%);background:#12201e;border:1px solid #3a5a56;border-radius:14px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.5);color:#edf7f7}
+.modal p{margin:0 0 18px;font-size:16px;line-height:1.7;white-space:pre-line}
+.modal .actions{justify-content:flex-end}
+.modal button{min-height:44px;min-width:96px}
+button:focus-visible,.admin-entry:focus-visible{outline:2px solid #86f7ff;outline-offset:2px}
+.toast{position:fixed;left:50%;bottom:24px;z-index:31;transform:translateX(-50%);padding:12px 20px;border-radius:12px;background:#0f3b2c;border:1px solid #2fbf85;color:#dfffee;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.show{opacity:1}
+.tv-status{position:absolute;right:14px;bottom:calc(clamp(44px,6vh,72px) + 10px);z-index:4;padding:4px 12px;border-radius:999px;font-size:13px;line-height:1.5;background:rgba(5,22,24,.85);border:1px solid rgba(89,239,234,.25);color:#9ad9d8;opacity:0;pointer-events:none;transition:opacity .3s;max-width:min(92vw,900px)}
+.tv-status[data-state="online"],.tv-status[data-state="saved"]{opacity:.5}
+.tv-status[data-state="error"]{opacity:1;color:#ffd0d1;border-color:#a8434b;background:rgba(60,14,18,.92);font-size:clamp(14px,1.2vw,20px)}
+.setup{position:fixed;inset:0;z-index:25;display:grid;place-items:center;padding:20px;background:rgba(1,10,10,.92);overflow:auto}
+.setup[hidden]{display:none}
+.setup-card{width:min(660px,100%);background:#12201e;border:1px solid #2f4b47;border-radius:16px;padding:clamp(20px,4vw,32px);color:#edf7f7;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.setup-card h1{margin:0 0 12px;font-size:clamp(22px,3vw,28px);color:#f1ffff}
+.setup-card p{margin:0 0 14px;line-height:1.7;color:#c8dddd}
+.setup-card label{display:block;font-size:14px;color:#c8dddd;margin:12px 0 6px}
+.setup-card input{font-size:16px;min-height:44px}
+.setup-card button{min-height:44px}
+.setup-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.setup-error{min-height:1.4em;margin:8px 0;color:#ffadaf;font-size:14px}
+.setup-links{margin-top:18px;padding-top:6px;border-top:1px solid #2b4340}
+.link-row{display:flex;gap:8px}
+.link-row input{flex:1;min-width:0;font-size:14px}
+@media(max-width:620px){
+  #admin{padding:12px}
+  .admin-head{flex-direction:column}
+  .formgrid{grid-template-columns:1fr}
+  .milestone{grid-template-columns:1fr;gap:6px}
+  .project-admin-head{flex-direction:column;align-items:stretch}
+  .project-admin-head .actions{justify-content:flex-start}
+  .project-admin-head .actions button,.milestone .actions button{min-height:40px}
+  .panel{padding:14px}
+  input,select,textarea{font-size:16px}
+}
+/* Phones and narrow windows: rows stack, so let the board scroll instead of squeezing. */
+@media(max-width:880px){
+  body{overflow:auto}
+  #tv{height:auto;min-height:100dvh}
+  .rows{flex:none}
+  .row{flex:none;gap:12px}
+  .page-head{height:auto;min-height:64px;padding-block:10px;flex-wrap:wrap;row-gap:8px}
+  .ticker{position:sticky;bottom:0}
+}
+@media(max-width:620px){
+  .head-tools{gap:8px;margin-left:auto}
+  .clock-box{font-size:15px;padding:6px 10px}
+  .milestone-date{font-size:12px}
+  .milestone-name{width:80px;font-size:12px}
+  .remaining-text{font-size:18px}
+  .status-dot{width:30px;height:30px}
+}
+
+</style>
+</head>
+<body>
+<div id="tv">
+  <div id="tvStatus" class="tv-status" role="status" aria-live="polite"></div>
+  <div class="topline"></div>
+  <div class="page-head">
+    <div class="title-group">
+      <div class="title-flag" aria-hidden="true">🏁</div>
+      <div class="page-title" id="titleEntry">計畫活動時程</div>
+    </div>
+    <div class="head-tools">
+      <div id="pageCount" class="page-count">第 1 頁 / 共 1 頁</div>
+      <div id="clockBox" class="clock-box">0000-00-00 00:00:00</div>
+      <button class="admin-entry" id="adminEntry" type="button" title="開啟後台管理">⚙ 後台</button>
+    </div>
+  </div>
+  <div id="rows" class="rows"></div>
+  <div class="ticker" id="ticker" role="region" aria-label="公告跑馬燈"><div class="speaker" aria-hidden="true">📢</div><div class="ticker-track"><span class="sr-only" id="tickerAccessible"></span><div id="tickerContent" class="ticker-content" aria-hidden="true"></div></div></div>
+  <div class="bottomline"></div>
+</div>
+
+<div id="admin" role="dialog" aria-modal="true">
+  <div class="admin-head">
+    <div>
+      <h1>計畫活動後台管理</h1>
+      <div class="note">按 Ctrl + Alt + M 或 F2 可切換後台。編輯期間暫停看板自動換頁；跑馬燈文字與播放時間須按「儲存」才會套用。</div>
+      <div id="syncStatus" class="sync-status" data-state="local" role="status" aria-live="polite">正在連線試算表…</div>
+    </div>
+    <div class="actions"><button id="openSetup" class="secondary" type="button">連線設定</button><button id="backTv">返回電視畫面</button></div>
+  </div>
+
+  <div class="storage-warning" id="storageWarning" role="alert" hidden></div>
+  <section class="panel">
+    <h2 id="projectFormTitle">新增計畫</h2>
+    <form id="projectForm">
+      <div class="formgrid">
+        <div class="field"><label for="projectName">計畫名稱</label><input id="projectName" required maxlength="120" placeholder="例如：百億青年計畫"></div>
+        <div class="field"><label for="projectTagline">副標語（選填）</label><input id="projectTagline" maxlength="120" placeholder="例如：勇敢逐夢，前進北極！"></div>
+        <div class="field"><label for="projectIcon">圖示（選填，可輸入 emoji）</label><input id="projectIcon" maxlength="10" placeholder="例如：🏔️"></div>
+        <div class="field"><label for="projectAnimal">時間軸動物</label><div class="animal-picker"><select id="projectAnimal" aria-describedby="projectAnimalHelp"></select><span id="projectAnimalPreview" class="animal-preview" aria-hidden="true"></span></div></div>
+        <div class="field"><label for="projectStart">計畫開始日（選填）</label><input id="projectStart" type="date"></div>
+        <div class="field"><label for="projectEnd">計畫結束日（選填）</label><input id="projectEnd" type="date"></div>
+        <div class="actions project-form-actions"><button id="projectSave" type="submit">＋ 新增計畫</button><button id="projectCancel" class="secondary" type="button" hidden>取消</button></div>
+      </div>
+    </form>
+    <p id="projectSaveStatus" class="project-save-status" role="status" aria-live="polite"></p>
+    <div class="note" id="projectAnimalHelp">每個計畫可使用不同動物，也可選擇「不顯示動物」。在此新增或編輯計畫時，請按新增／儲存修改；也可在下方清單直接更換動物，選擇後立即儲存。動物依日期固定顯示於時間軸上，不飄動、不超出起訖端點。</div>
+    <div class="note">填妥計畫開始日與結束日並儲存後，時間軸會自動產生「計畫開始」與「計畫結束」兩個端點及連線，不必另外新增活動。修改日期後端點會同步更新；也可再新增活動／報告節點。圖示與副標語若留白，系統會自動帶入預設樣式。</div>
+  </section>
+
+  <section class="panel">
+    <h2>各計畫與活動清單｜自由排序</h2>
+    <div class="note" style="margin:-5px 0 12px">按住每個計畫左側的「⠿」拖曳至新位置，或使用「↑」「↓」調整順序。變更會立即儲存，電視看板也會依此順序顯示（每頁 5 個計畫）。</div>
+    <p class="project-save-status sort-status" id="sortStatus" role="status" aria-live="polite"></p>
+    <div id="projectAdminList"></div>
+    <div class="actions" style="margin-top:14px"><button class="secondary" id="export">匯出備份</button><button class="secondary" id="import">匯入備份</button><input id="file" type="file" accept=".json,application/json" hidden></div>
+  </section>
+
+  <section class="panel">
+    <h2 id="milestoneFormTitle">新增活動／報告日期</h2>
+    <form id="milestoneForm">
+      <div class="formgrid">
+        <div class="field"><label for="milestoneProject">所屬計畫</label><select id="milestoneProject" required></select></div>
+        <div class="field"><label for="milestoneName">活動／報告名稱</label><input id="milestoneName" required maxlength="100" placeholder="例如：期中報告"></div>
+        <div class="field"><label for="milestoneDate">日期</label><input id="milestoneDate" type="date" required></div>
+        <div class="actions"><button id="milestoneSave" type="submit">＋ 新增活動</button><button id="milestoneCancel" class="secondary" type="button" hidden>取消</button></div>
+      </div>
+    </form>
+    <div class="note">電視畫面會依日期先後排列所有活動節點，並以最近一個尚未到期的節點作為倒數依據；已過去的節點顯示為紅色，當前節點以黃色強調，最後一個未來節點可顯示為綠色收尾。</div>
+  </section>
+
+  <section class="panel" id="tickerPanel">
+    <h2>底部跑馬燈設定</h2>
+    <form id="tickerForm">
+      <div class="settings">
+        <div style="grid-column:1/-1"><label for="tickerText">跑馬燈文字</label><textarea id="tickerText" rows="3" aria-describedby="tickerStatus tickerHelp" placeholder="輸入要在電視底部循環顯示的文字"></textarea></div>
+        <div><label for="tickerSpeed">每輪播放時間：<span id="tickerSpeedValue">24</span> 秒（越大越慢）</label><input id="tickerSpeed" type="range" min="8" max="80" step="2" value="24"></div>
+      </div>
+      <div class="actions" style="margin-top:12px"><button id="saveTicker" type="submit">儲存跑馬燈設定</button><button id="cancelTicker" class="secondary" type="button">取消修改</button><button id="resetTicker" class="secondary" type="button">恢復預設文字</button></div>
+    </form>
+    <p id="tickerStatus" class="ticker-status" role="status" aria-live="polite">修改後請按「儲存跑馬燈設定」。</p>
+    <div id="tickerHelp" class="note">短公告會自動重複填滿畫面，避免循環時整段空白。資料存在你的 Google 試算表：在手機或電腦輸入後台密碼並儲存後，所有開著此網址的電視會在 30 秒內自動更新；建議仍定期「匯出備份」。</div>
+  </section>
+
+  <section class="panel">
+    <h2>電視顯示設定</h2>
+    <div class="settings">
+      <div><label for="font">計畫名稱字體大小</label><input id="font" type="range" min="20" max="48" step="2" value="32"></div>
+      <div><label for="interval">每頁停留時間（秒）</label><input id="interval" type="range" min="5" max="30" step="1" value="10"></div>
+      <div><label>燈號規則</label><div style="padding:10px;border:1px solid #3a5241;border-radius:8px;background:#07100a">剩 8 天以上：綠燈；剩 7–4 天：黃燈；剩 3 天內：紅燈</div></div>
+      <div><label for="overdueMode">活動逾期燈號</label><select id="overdueMode"><option value="red">紅燈</option><option value="yellow">黃燈</option></select></div>
+    </div>
+  </section>
+</div>
+
+<div id="modalBack" class="modal-back" role="presentation"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="modalText"><p id="modalText"></p><input id="modalInput" type="password" autocomplete="current-password" hidden style="margin:-6px 0 18px"><div class="actions"><button id="modalCancel" class="secondary" type="button">取消</button><button id="modalOk" type="button">確定</button></div></div></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<div id="setup" class="setup" role="dialog" aria-modal="true" aria-labelledby="setupTitle" hidden>
+  <div class="setup-card">
+    <h1 id="setupTitle">連接 Google 試算表</h1>
+    <p>貼上試算表中 Apps Script「網頁應用程式」的網址（以 <b>/exec</b> 結尾）。連上之後，在手機後台修改的資料會存進試算表，電視自動更新。</p>
+    <form id="setupForm">
+      <label for="apiInput">Apps Script 網址</label>
+      <input id="apiInput" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/……/exec" required>
+      <p id="setupError" class="setup-error" role="alert"></p>
+      <div class="setup-actions"><button type="submit">連線</button><button id="setupCancel" type="button" class="secondary">先不用，單機使用</button></div>
+    </form>
+    <div id="setupLinks" class="setup-links" hidden>
+      <label for="tvLink">電視用網址（電視開這個）</label>
+      <div class="link-row"><input id="tvLink" readonly><button type="button" data-copy="tvLink">複製</button></div>
+      <label for="adminLink">手機編輯用網址（開啟後直接進後台）</label>
+      <div class="link-row"><input id="adminLink" readonly><button type="button" data-copy="adminLink">複製</button></div>
+    </div>
+  </div>
+</div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),KEY='tv-project-activities-neon-v1',VIEW_KEY='tv-project-view-stash-v1';
+let projects=[],page=0,timer=null,editingProject=null,editingMilestone=null;
+let settings={font:32,interval:10,overdueMode:'red'};
+const DEFAULT_TICKER={text:'百億青年計畫｜勇敢逐夢，前進北極！　✨　數位人才培訓計畫｜培育未來，點亮世界！',speed:24};
+let tickerSettings={...DEFAULT_TICKER};
+let tickerDirty=false,pendingPersistence=false;
+let lastTickerLayout='',tickerLayoutFrame=0,tickerResizeObserver=null;
+const isAdminOpen=()=>$('admin').classList.contains('open');
+
+function normalizeTickerSettings(value){
+  const source=value&&typeof value==='object'?value:{};
+  const seconds=Number(source.speed);
+  return {
+    text:typeof source.text==='string'?source.text:DEFAULT_TICKER.text,
+    speed:Number.isFinite(seconds)&&seconds>0?Math.min(80,Math.max(8,seconds)):DEFAULT_TICKER.speed
+  };
+}
+function tickerMessage(text,state='info'){
+  $('tickerStatus').textContent=text;
+  $('tickerStatus').dataset.state=state;
+}
+function storageWarning(text){
+  $('storageWarning').textContent=text;
+  $('storageWarning').hidden=!text;
+}
+// Editor state and TV rendering are deliberately separate: rendering never assigns form values.
+function syncTickerEditor(force=false){
+  if(tickerDirty&&!force)return;
+  $('tickerText').value=tickerSettings.text;
+  $('tickerSpeed').value=tickerSettings.speed;
+  $('tickerSpeedValue').textContent=$('tickerSpeed').value;
+  $('tickerText').removeAttribute('aria-invalid');
+  tickerDirty=false;
+}
+function readTickerDraft(){
+  return normalizeTickerSettings({text:$('tickerText').value,speed:$('tickerSpeed').value});
+}
+function markTickerDirty(){
+  const draft=readTickerDraft();
+  tickerDirty=draft.text!==tickerSettings.text||draft.speed!==tickerSettings.speed;
+  $('tickerSpeedValue').textContent=$('tickerSpeed').value;
+  $('tickerText').removeAttribute('aria-invalid');
+  tickerMessage(tickerDirty?'有尚未儲存的變更；完成後請按「儲存跑馬燈設定」。':pendingPersistence?'目前內容尚未寫入瀏覽器，請重試儲存或匯出備份。':'目前內容與已套用設定相同。',tickerDirty?'dirty':pendingPersistence?'warning':'info');
+}
+function saveTickerFromEditor(){
+  const draft=readTickerDraft();
+  if(!draft.text.trim()){
+    tickerMessage('請輸入跑馬燈文字。空白內容不會覆蓋原本的設定。','error');
+    $('tickerText').setAttribute('aria-invalid','true');
+    $('tickerText').focus();
+    return false;
+  }
+  tickerSettings=draft;
+  const persisted=save();
+  syncTickerEditor(true);
+  renderTicker();
+  tickerMessage(persisted?'已儲存跑馬燈設定；返回看板即可顯示新內容。':'已套用本次畫面，但無法寫入瀏覽器。關閉頁面前請按「匯出備份」保留資料。',persisted?'success':'warning');
+  return persisted;
+}
+
+const projectPresets=[
+  {icon:'🏔️',tagline:'勇敢逐夢，前進北極！'},
+  {icon:'💡',tagline:'培育未來，點亮世界！'},
+  {icon:'🌐',tagline:'創意無限，實現可能！'},
+  {icon:'⚙️',tagline:'走向世界，拓展視野！'},
+  {icon:'✈️',tagline:'體驗國際，累積實力！'},
+  {icon:'🚀',tagline:'整合資源，邁向新局！'},
+  {icon:'📚',tagline:'深化學習，打造專長！'}
+];
+// Preserve the original seven choices and their order for legacy project migration.
+const animalChoices=[
+  {id:'crab',emoji:'🦀',name:'螃蟹'},
+  {id:'hippo',emoji:'🦛',name:'河馬'},
+  {id:'giraffe',emoji:'🦒',name:'長頸鹿'},
+  {id:'mouse',emoji:'🐭',name:'老鼠'},
+  {id:'unicorn',emoji:'🦄',name:'彩虹小馬'},
+  {id:'capybara',emoji:'🦫',name:'水豚'},
+  {id:'llama',emoji:'🦙',name:'羊駝'}
+];
+const noAnimal={id:'none',emoji:'',name:'不顯示動物'};
+
+const nowDate=()=>new Date();
+const pad=n=>String(n).padStart(2,'0');
+const today=()=>{const d=nowDate();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const dayDiff=date=>{if(!date)return null;const [y,m,d]=date.split('-').map(Number),t=Date.UTC(y,m-1,d),n=nowDate(),now=Date.UTC(n.getFullYear(),n.getMonth(),n.getDate());return Math.round((t-now)/86400000)};
+const toUTC=date=>{if(!date)return null;const [y,m,d]=date.split('-').map(Number);return Date.UTC(y,m-1,d)};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hash=s=>Array.from(String(s||'')).reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
+
+function projectStyle(project,index){
+  const preset=projectPresets[index % projectPresets.length] || projectPresets[0];
+  return {
+    icon:(project.icon||'').trim() || preset.icon,
+    tagline:(project.tagline||'').trim() || preset.tagline
+  };
+}
+function normalizeAnimal(value,projectId){
+  if(value==='none')return 'none';
+  const chosen=animalChoices.find(animal=>animal.id===value||animal.emoji===value);
+  // Old backups have no animal field. Retain the same original hash-based choice.
+  return chosen?chosen.id:animalChoices[hash(projectId)%animalChoices.length].id;
+}
+function animalFor(project){
+  const id=normalizeAnimal(project.animal,project.id);
+  return id==='none'?noAnimal:animalChoices.find(animal=>animal.id===id);
+}
+function animalOptions(selected='crab'){
+  return [...animalChoices,noAnimal].map(animal=>`<option value="${animal.id}"${animal.id===selected?' selected':''}>${esc((animal.emoji?animal.emoji+'　':'')+animal.name)}</option>`).join('');
+}
+function syncProjectAnimalPreview(){
+  const animal=animalChoices.find(item=>item.id===$('projectAnimal').value)||noAnimal;
+  $('projectAnimalPreview').textContent=animal.emoji||'—';
+  $('projectAnimalPreview').title=animal.name;
+}
+function projectMessage(text,state='info'){
+  $('projectSaveStatus').textContent=text;
+  $('projectSaveStatus').dataset.state=state;
+}
+// Keep the existing storage key so the patch can read existing data in the same storage context.
+function save(){
+  const shared=hasServer;
+  if(shared)schedulePush();
+  try{
+    const serialized=JSON.stringify({projects,settings,tickerSettings});
+    localStorage.setItem(KEY,serialized);
+    if(localStorage.getItem(KEY)!==serialized)throw new Error('Storage verification failed');
+    pendingPersistence=false;
+    storageWarning('');
+    return true;
+  }catch(error){
+    // With the server, the shared save is what counts; the browser copy is only a cache.
+    if(shared)return true;
+    pendingPersistence=true;
+    storageWarning('無法寫入瀏覽器儲存空間。目前變更只保留在這個開啟的頁面；請先「匯出備份」，避免關閉或重新整理後遺失。');
+    return false;
+  }
+}
+
+// ---------- Google Apps Script server: shared data for every screen ----------
+// 可選：把 Apps Script 網址（結尾 /exec）貼在下面引號內，網址就不必加 ?api=
+const API_URL_FIXED='';
+const API_KEY='tv-board-api-url-v1';
+const apiFrom=v=>{const s=String(v||'').trim();return /^https:\/\/script\.google\.com\/.+\/exec$/.test(s)?s:''};
+const storedApi=()=>{try{return localStorage.getItem(API_KEY)||''}catch(e){return ''}};
+const URL_PARAMS=new URLSearchParams(location.search);
+const API_URL=apiFrom(URL_PARAMS.get('api'))||apiFrom(API_URL_FIXED)||apiFrom(storedApi());
+const hasServer=!!API_URL;
+const PW_KEY='tv-project-admin-pw';
+let remoteVersion=null,forceNextPull=false,dirtyRemote=false,pushTimer=0,pushing=false,pushRetried=false,localOnly=false;
+// Talks to the Apps Script in the spreadsheet. A text/plain POST needs no CORS preflight.
+async function gs(fn,...args){
+  if(fn==='getBoard'){
+    const res=await fetch(API_URL+(API_URL.includes('?')?'&':'?')+'_='+Date.now(),{cache:'no-store'});
+    const x=await res.json();
+    return {version:x.version||'',raw:x.board?JSON.stringify(x.board):'',empty:!x.board,warnings:x.warnings||[]};
+  }
+  const [raw,password,baseVersion]=args;
+  const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({action:'save',password,baseVersion,board:JSON.parse(raw)})});
+  return res.json();
+}
+function setSync(state,text){
+  const el=$('syncStatus');el.dataset.state=state;el.textContent=text;
+  const tv=$('tvStatus');tv.dataset.state=state;tv.textContent=text;
+}
+const fmtTime=()=>{const d=nowDate();return `${pad(d.getHours())}:${pad(d.getMinutes())}`};
+function applyBoard(x){
+  projects=x.projects.map(normalizeProject);
+  settings={...settings,...x.settings};
+  tickerSettings=normalizeTickerSettings({...tickerSettings,...x.tickerSettings});
+}
+// Fetch the latest board. Never overwrite edits on this device that have not reached the server.
+function pullBoard(force=false){
+  if(!hasServer)return Promise.resolve();
+  return gs('getBoard').then(r=>{
+    if(dirtyRemote||pushing||pushTimer)return;
+    if(!force&&!forceNextPull&&r.version===remoteVersion)return;
+    forceNextPull=false;
+    remoteVersion=r.version||'';
+    // A brand-new spreadsheet: show an empty board rather than sample rows (unless this device already has edits).
+    let touched=false;try{touched=!!localStorage.getItem(KEY+'-touched')}catch(e){}
+    if(r.empty&&!touched){projects=[];renderTV();if(isAdminOpen())renderAdmin();}
+    if(r.raw){
+      const x=JSON.parse(r.raw);
+      if(x&&Array.isArray(x.projects)){
+        applyBoard(x);
+        try{localStorage.setItem(KEY,r.raw)}catch(e){}
+        renderTV();renderTicker();restartTimer();
+        if(isAdminOpen())renderAdmin();
+      }
+    }
+    if(!localOnly){
+      const w=r.warnings||[];
+      if(w.length)setSync('error',`${fmtTime()} 已更新，但試算表有 ${w.length} 個日期需要檢查（格式請用 2026-11-20）：${w.slice(0,3).join('、')}${w.length>3?'…':''}`);
+      else setSync('online',`已連線試算表（${fmtTime()} 更新）`);
+    }
+  }).catch(()=>{
+    setSync('error','暫時連不上試算表，畫面顯示的是這台裝置上次的資料；會自動重試。若一直如此，請確認 Apps Script 已部署、存取權為「所有人」。');
+  });
+}
+function getPassword(){
+  try{const pw=localStorage.getItem(PW_KEY);if(pw)return Promise.resolve(pw)}catch(e){}
+  return ask('請輸入後台密碼，變更才會存進試算表、同步到電視。\n（密碼會記在這台裝置，下次不必再輸入）',{ok:'儲存',cancel:'先不要',input:true})
+    .then(pw=>{if(pw){try{localStorage.setItem(PW_KEY,pw)}catch(e){}}return pw||null});
+}
+function forgetPassword(){try{localStorage.removeItem(PW_KEY)}catch(e){}}
+function schedulePush(){
+  try{localStorage.setItem(KEY+'-touched','1')}catch(e){}
+  dirtyRemote=true;localOnly=false;
+  clearTimeout(pushTimer);
+  pushRetried=false;
+  setSync('pending','有變更，稍後存進試算表…');
+  pushTimer=setTimeout(push,1500);
+}
+async function push(){
+  pushTimer=0;
+  if(!hasServer||!dirtyRemote)return;
+  if(remoteVersion===null){pushTimer=setTimeout(push,2000);pullBoard(true);return;}
+  const pw=await getPassword();
+  // Without the password the server stays the source of truth, so screens keep updating.
+  if(!pw){localOnly=true;dirtyRemote=false;forceNextPull=true;setSync('local','未輸入密碼：這次的變更不會儲存，畫面將在下次更新時恢復為伺服器上的版本。');return;}
+  pushing=true;
+  setSync('pending','正在儲存到試算表…');
+  let r;
+  try{
+    r=await gs('saveBoard',JSON.stringify({projects,settings,tickerSettings}),pw,remoteVersion);
+  }catch(err){
+    pushing=false;
+    if(!pushRetried){pushRetried=true;pushTimer=setTimeout(push,4000);setSync('pending','連線不穩，正在重試…');return;}
+    setSync('error','無法連線到試算表；變更暫存在這台裝置，再做一次修改時會重試。');
+    return;
+  }
+  pushing=false;
+  if(r&&r.ok){
+    remoteVersion=r.version;dirtyRemote=false;
+    setSync('saved',`✓ 已存進試算表（${fmtTime()}），電視會在 30 秒內更新。`);toast('✓ 已存進試算表');
+    return;
+  }
+  const code=r&&r.code;
+  if(code==='bad_password'){
+    forgetPassword();
+    await notify('後台密碼不正確，請重新輸入。');
+    dirtyRemote=true;return push();
+  }
+  if(code==='password_not_set'){
+    setSync('error','試算表的程式尚未設定後台密碼。');
+    notify('尚未設定後台密碼：請到試算表的「擴充功能 → Apps Script」，把 Code.gs 裡的 ADMIN_PASSWORD 改成你的密碼，再到「部署 → 管理部署作業」發佈新版本。');
+    return;
+  }
+  if(code==='conflict'){
+    const mine=await ask('另一台裝置（或試算表）剛更新了看板。要用你這台的版本覆蓋它，還是放棄你的修改、載入最新版本？',{ok:'用我的覆蓋',cancel:'載入最新版'});
+    if(mine){remoteVersion=r.version||'';return push();}
+    dirtyRemote=false;
+    return pullBoard(true);
+  }
+  setSync('error',code==='too_large'?'資料量過大，無法儲存；請刪減內容。':'儲存失敗（'+(code||'unknown')+'）。變更暫存在這台裝置。');
+}
+
+// ---------- In-page dialogs (browser confirm/alert are blocked on the website) ----------
+let modalResolve=null;
+const isModalOpen=()=>$('modalBack').classList.contains('open');
+let modalHasInput=false;
+function ask(text,{ok='確定',cancel='取消',input=false}={}){
+  return new Promise(resolve=>{
+    if(modalResolve)modalResolve(modalHasInput?null:false);
+    modalResolve=resolve;modalHasInput=input;
+    $('modalText').textContent=text;
+    $('modalOk').textContent=ok;
+    $('modalCancel').textContent=cancel||'';
+    $('modalCancel').hidden=!cancel;
+    $('modalInput').hidden=!input;
+    $('modalInput').value='';
+    $('modalBack').classList.add('open');
+    (input?$('modalInput'):$('modalOk')).focus();
+  });
+}
+const notify=text=>ask(text,{ok:'知道了',cancel:''});
+function closeModal(result){
+  $('modalBack').classList.remove('open');
+  const r=modalResolve;modalResolve=null;
+  if(r)r(modalHasInput?(result?$('modalInput').value.trim()||null:null):result);
+}
+let toastTimer=0;
+function toast(text){
+  const t=$('toast');t.textContent=text;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+function normalizeProject(p){return {...p,tagline:p.tagline||'',icon:p.icon||'',animal:normalizeAnimal(p.animal,p.id),milestones:Array.isArray(p.milestones)?p.milestones:[]}}
+function load(){
+  let loaded=false;
+  try{
+    const raw=localStorage.getItem(KEY);
+    // Read the original version only when the neon version has no saved data.
+    const stored=raw===null?localStorage.getItem('tv-project-activities-v3'):raw;
+    if(stored!==null){
+      const x=JSON.parse(stored);
+      if(!x||!Array.isArray(x.projects))throw new Error('Invalid saved data');
+      projects=x.projects.map(normalizeProject);
+      settings={...settings,...x.settings};
+      tickerSettings=normalizeTickerSettings({...tickerSettings,...x.tickerSettings});
+      loaded=true;
+    }
+  }catch(error){
+    storageWarning('無法讀取既有儲存資料。暫時顯示範例資料，未自動覆寫原資料；請使用「匯入備份」還原。');
+  }
+  // An intentionally empty project list is valid; never replace it with demo records.
+  if(!loaded){
+    projects=[
+      {id:uid(),name:'百億青年計畫',tagline:'勇敢逐夢，前進北極！',icon:'🏔️',start:'',end:'',milestones:[{id:uid(),name:'計畫啟動',date:'2026-09-01'},{id:uid(),name:'期中報告',date:'2026-10-05'},{id:uid(),name:'提報',date:'2026-11-11'},{id:uid(),name:'成果報告',date:'2026-12-31'}]},
+      {id:uid(),name:'數位人才培訓計畫',tagline:'培育未來，點亮世界！',icon:'💡',start:'',end:'',milestones:[{id:uid(),name:'課程開始',date:'2026-08-20'},{id:uid(),name:'階段考核',date:'2026-10-10'},{id:uid(),name:'實作發表',date:'2026-11-20'},{id:uid(),name:'結業報告',date:'2027-01-15'}]},
+      {id:uid(),name:'創新創業扶植計畫',tagline:'創意無限，實現可能！',icon:'🌐',start:'',end:'',milestones:[{id:uid(),name:'提案徵件',date:'2026-09-15'},{id:uid(),name:'初審',date:'2026-10-25'},{id:uid(),name:'複審',date:'2026-12-01'},{id:uid(),name:'成果展示',date:'2027-02-28'}]},
+      {id:uid(),name:'青年國際交流計畫',tagline:'走向世界，拓展視野！',icon:'⚙️',start:'',end:'',milestones:[{id:uid(),name:'報名開始',date:'2026-08-01'},{id:uid(),name:'名單公告',date:'2026-09-30'},{id:uid(),name:'行前說明',date:'2026-11-18'},{id:uid(),name:'出發交流',date:'2027-01-20'}]},
+      {id:uid(),name:'海外實習補助計畫',tagline:'體驗國際，累積實力！',icon:'✈️',start:'',end:'',milestones:[{id:uid(),name:'申請開始',date:'2026-07-15'},{id:uid(),name:'書面審查',date:'2026-10-01'},{id:uid(),name:'面試',date:'2026-11-30'},{id:uid(),name:'最終公告',date:'2027-03-10'}]}
+    ].map(normalizeProject);
+  }
+}
+function ordered(project){
+  const points=[...(project.milestones||[])].filter(m=>m.date);
+  if(project.start)points.push({id:'auto-start-'+project.id,name:'計畫開始',date:project.start,automatic:true});
+  if(project.end)points.push({id:'auto-end-'+project.id,name:'計畫結束',date:project.end,automatic:true});
+  return points.sort((a,b)=>a.date.localeCompare(b.date)||(a.id===('auto-start-'+project.id)?-1:b.id===('auto-start-'+project.id)?1:a.id===('auto-end-'+project.id)?1:b.id===('auto-end-'+project.id)?-1:0));
+}
+// Display one timeline node per calendar date. Keep underlying activities separate
+// so they can still be edited/deleted individually in the administration panel.
+function timelineDisplayPoints(project){
+  const byDate=new Map();
+  for(const milestone of ordered(project)){
+    if(!byDate.has(milestone.date)){
+      byDate.set(milestone.date,{...milestone,names:[],ids:[]});
+    }
+    const group=byDate.get(milestone.date);
+    if(!group.names.includes(milestone.name))group.names.push(milestone.name);
+    group.ids.push(milestone.id);
+  }
+  return [...byDate.values()].map(group=>({
+    ...group,
+    name:group.names.join('／'),
+    automatic:group.ids.every(id=>id.startsWith('auto-'))
+  }));
+}
+function currentActivity(project){const list=ordered(project);if(!list.length)return null;return list.find(m=>dayDiff(m.date)>=0)||list[list.length-1]}
+function state(m){
+  if(!m)return {c:'gray',label:'尚未設定活動日期',left:null};
+  const left=dayDiff(m.date);
+  if(left<0)return {c:settings.overdueMode,label:'已逾期',left};
+  if(left<=3)return {c:'red',label:left===0?'今天到期':`剩 ${left} 天`,left};
+  if(left<=7)return {c:'yellow',label:`剩 ${left} 天`,left};
+  return {c:'green',label:`剩 ${left} 天`,left};
+}
+function timelinePosition(list){
+  const count=Math.max(1,list.length);
+  if(count===1)return 50;
+  const now=toUTC(today());
+  const times=list.map(m=>toUTC(m.date));
+  if(now<=times[0])return 0;
+  const lastIdx=times.length-1;
+  if(now>=times[lastIdx])return 100;
+  for(let i=0;i<lastIdx;i++){
+    if(now>=times[i] && now<=times[i+1]){
+      const span=Math.max(1,times[i+1]-times[i]);
+      const frac=(now-times[i])/span;
+      return ((i+frac)/(count-1))*100;
+    }
+  }
+  return 50;
+}
+function pointClass(list,x,i,nextMilestone){
+  const days=dayDiff(x.date);
+  const prevDays=i>0 ? dayDiff(list[i-1].date) : null;
+  let cls=[];
+  if(days!==null && days<0)cls.push('past'); else cls.push('future');
+  if(i>0 && prevDays!==null && prevDays<0)cls.push('solid-before');
+  if(nextMilestone && x.date===nextMilestone.date)cls.push('current');
+  else if(i===list.length-1 && days!==null && days>=0)cls.push('final');
+  if(days!==null && days>=0 && days<=3)cls.push('urgent');
+  else if(days!==null && days>=0 && days<=7)cls.push('warning');
+  return cls.join(' ');
+}
+function renderTicker(force=false){
+  const track=document.querySelector('.ticker-track');
+  const width=track.getBoundingClientRect().width;
+  // Hidden TV panels cannot be measured. closeAdmin() / ResizeObserver retries once visible.
+  if(width<=0)return;
+  const text=tickerSettings.text.replace(/\s+/g,' ').trim()||'請至後台設定跑馬燈文字';
+  const layoutKey=JSON.stringify([text,tickerSettings.speed,Math.round(width*100)/100]);
+  if(!force&&layoutKey===lastTickerLayout)return;
+
+  const content=$('tickerContent');
+  const group=document.createElement('div');
+  group.className='ticker-group';
+  const item=document.createElement('div');
+  item.className='ticker-item';
+  const label=document.createElement('span');
+  label.textContent=text; // Never parse announcement text as HTML.
+  const divider=document.createElement('span');
+  divider.className='ticker-divider';
+  divider.textContent='✦';
+  item.append(label,divider);
+  group.append(item);
+
+  // Measure untransformed content, then fill at least one viewport before duplicating it.
+  content.style.animation='none';
+  content.replaceChildren(group);
+  const itemWidth=item.getBoundingClientRect().width;
+  if(itemWidth<=0){lastTickerLayout='';return;}
+  const copies=Math.max(1,Math.ceil((width+1)/itemWidth));
+  for(let i=1;i<copies;i++)group.append(item.cloneNode(true));
+  const distance=group.getBoundingClientRect().width;
+  content.append(group.cloneNode(true));
+  content.style.setProperty('--ticker-distance',distance+'px');
+  content.style.setProperty('--ticker-duration',tickerSettings.speed+'s');
+  $('tickerAccessible').textContent=text;
+  // Reset only for actual content/layout changes, never for TV page or date refreshes.
+  void content.offsetWidth;
+  content.style.removeProperty('animation');
+  lastTickerLayout=layoutKey;
+}
+function queueTickerLayout(force=false){
+  if(force)lastTickerLayout='';
+  if(tickerLayoutFrame)cancelAnimationFrame(tickerLayoutFrame);
+  tickerLayoutFrame=requestAnimationFrame(()=>{tickerLayoutFrame=0;renderTicker();});
+}
+function updateClock(){
+  const d=nowDate();
+  $('clockBox').textContent=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+// Position against rendered node centers rather than the full grid width.
+function positionTimelineAnimals(){
+  document.querySelectorAll('.timeline').forEach(timeline=>{
+    const animal=timeline.querySelector('.timeline-animal');
+    if(!animal)return;
+    const nodes=[...timeline.querySelectorAll('.milestone-node')];
+    if(!nodes.length)return;
+    const rect=timeline.getBoundingClientRect();
+    const progress=Math.max(0,Math.min(100,parseFloat(animal.style.getPropertyValue('--animal-pos'))||0))/100;
+    const scaled=progress*Math.max(0,nodes.length-1);
+    const index=Math.min(Math.floor(scaled),nodes.length-1);
+    const fraction=scaled-index;
+    const a=nodes[index].getBoundingClientRect();
+    const b=nodes[Math.min(index+1,nodes.length-1)].getBoundingClientRect();
+    const x=a.left+a.width/2+(b.left+b.width/2-a.left-a.width/2)*fraction;
+    const y=a.top+a.height/2+(b.top+b.height/2-a.top-a.height/2)*fraction;
+    animal.style.left=(x-rect.left)+'px';
+    animal.style.top=(y-rect.top)+'px';
+  });
+}
+window.addEventListener('resize',positionTimelineAnimals);
+if(document.fonts)document.fonts.ready.then(positionTimelineAnimals);
+function renderTV(){
+  const total=Math.max(1,Math.ceil(projects.length/5));
+  page=page%total;
+  $('pageCount').textContent=`第 ${page+1} 頁 / 共 ${total} 頁`;
+  const batch=projects.slice(page*5,page*5+5);
+  $('rows').innerHTML=batch.length ? batch.map((p,index)=>{
+    const list=timelineDisplayPoints(p),next=currentActivity(p),s=state(next),style=projectStyle(p,page*5+index),count=Math.max(1,list.length),animal=animalFor(p),animalPos=timelinePosition(list.length?list:[{date:today()}]);
+    const points=list.length?list.map((x,i)=>`<div class="milestone-point ${pointClass(list,x,i,next)}"><div class="milestone-date">${esc(x.date||'—')}</div><div class="milestone-node" title="${esc(x.name)}"></div><div class="milestone-name">${x.names.map(name=>`<div>${esc(name)}</div>`).join('')}</div></div>`).join(''):`<div class="milestone-point future"><div class="milestone-date">—</div><div class="milestone-node"></div><div class="milestone-name">請至後台新增活動</div></div>`;
+    return `<div class="row">
+      <div class="project-cell">
+        <div class="project-icon">${esc(style.icon)}</div>
+        <div class="project-meta">
+          <div class="name" title="${esc(p.name)}">${esc(p.name)}</div>
+          <div class="tagline">${esc(style.tagline)}</div>
+        </div>
+      </div>
+      <div class="activity">
+        <div class="timeline ${count===1?'single-point':''}" style="--milestone-count:${count}">
+          ${points}
+          ${animal.emoji?`<span class="timeline-animal" title="${esc(animal.name)}" aria-label="${esc(animal.name)}" style="--animal-pos:${animalPos}%"><span class="animal-body">${animal.emoji}</span></span>`:''}
+        </div>
+      </div>
+      <div class="status-wrap"><div class="remaining-badge ${s.c}"><span class="remaining-text">${esc(s.label)}</span><i class="status-dot" aria-hidden="true"></i></div></div>
+    </div>`;
+  }).join('') : `<div class="empty">尚未建立計畫</div>`;
+  document.documentElement.style.setProperty('--font',settings.font+'px');
+  updateClock();
+  positionTimelineAnimals();
+}
+function renderProjectList(){
+  const root=$('projectAdminList');
+  root.innerHTML=projects.length?projects.map((p,index)=>{
+    const style=projectStyle(p,index);
+    return `<div class="project-admin" draggable="true" data-sort-project="${esc(p.id)}"><div class="project-admin-head"><div class="project-admin-title"><span class="drag-handle" title="拖曳改變計畫順序" aria-label="拖曳改變計畫順序">⠿</span><span>${esc(style.icon)}</span><div><strong>${esc(p.name)}</strong><div class="note" style="margin-top:3px">${esc(style.tagline)}</div></div></div><div class="actions"><span class="sort-controls"><button type="button" class="secondary" title="上移一個位置" aria-label="將${esc(p.name)}上移" data-sort-up="${esc(p.id)}" ${index===0?'disabled':''}>↑</button><button type="button" class="secondary" title="下移一個位置" aria-label="將${esc(p.name)}下移" data-sort-down="${esc(p.id)}" ${index===projects.length-1?'disabled':''}>↓</button></span><button class="secondary" data-project-edit="${p.id}">編輯計畫</button><button class="danger" data-project-delete="${p.id}">刪除計畫</button><button data-add-milestone="${p.id}">＋ 新增活動</button></div></div><div class="project-animal-settings"><label class="quick-animal-field"><span>時間軸動物</span><select data-project-animal="${esc(p.id)}" aria-label="${esc(p.name)}的時間軸動物">${animalOptions(animalFor(p).id)}</select></label><span class="animal-save-status" role="status" aria-live="polite">選擇後會立即儲存；不影響其他計畫。</span></div><div class="milestone-list">${ordered(p).length?ordered(p).map(m=>`<div class="milestone"><div><strong>${esc(m.name)}</strong><div class="note">${esc(m.date)}</div></div><div class="lightmini"><i class="light ${state(m).c}"></i>${state(m).label}</div><div class="actions">${m.automatic?'<span class="note">自動產生；請由「編輯計畫」調整日期</span>':`<button class="secondary" data-milestone-edit="${p.id}|${m.id}">修改</button><button class="danger" data-milestone-delete="${p.id}|${m.id}">刪除</button>`}</div></div>`).join(''):'<div class="note">尚未新增活動。請按「新增活動」。</div>'}</div></div>`;
+  }).join(''):'<div class="note">尚未建立計畫。</div>';
+  const sel=$('milestoneProject'),old=sel.value;
+  sel.innerHTML=projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  if(projects.some(p=>p.id===old))sel.value=old;
+}
+function renderAdmin(){
+  renderProjectList();
+  $('font').value=settings.font;
+  $('interval').value=settings.interval;
+  $('overdueMode').value=settings.overdueMode;
+  syncTickerEditor();
+}
+function redraw(){renderTV();renderAdmin();const persisted=save();restartTimer();return persisted;}
+function restartTimer(){
+  if(timer)clearInterval(timer);
+  timer=null;
+  if(isAdminOpen())return;
+  const seconds=Math.min(30,Math.max(5,Number(settings.interval)||10));
+  timer=setInterval(()=>{
+    if(isAdminOpen())return;
+    const total=Math.max(1,Math.ceil(projects.length/5));
+    if(total>1){page=(page+1)%total;renderTV();}
+  },seconds*1000);
+}
+function resetProjectForm(){$('projectForm').reset();editingProject=null;$('projectAnimal').value='crab';syncProjectAnimalPreview();projectMessage('');$('projectFormTitle').textContent='新增計畫';$('projectSave').textContent='＋ 新增計畫';$('projectCancel').hidden=true}
+function resetMilestoneForm(){$('milestoneForm').reset();editingMilestone=null;$('milestoneFormTitle').textContent='新增活動／報告日期';$('milestoneSave').textContent='＋ 新增活動';$('milestoneCancel').hidden=true}
+
+$('projectForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const p={id:editingProject||uid(),name:$('projectName').value.trim(),tagline:$('projectTagline').value.trim(),icon:$('projectIcon').value.trim(),animal:$('projectAnimal').value,start:$('projectStart').value,end:$('projectEnd').value,milestones:[]};
+  if(p.start && p.end && p.end<p.start){projectMessage('計畫結束日不能早於開始日。','warning');return;}
+  if(editingProject){const old=projects.find(x=>x.id===editingProject);p.milestones=old?.milestones||[];projects=projects.map(x=>x.id===editingProject?normalizeProject(p):x)}
+  else projects.push(normalizeProject(p));
+  const animal=animalFor(p);
+  resetProjectForm();
+  const persisted=redraw();
+  projectMessage(persisted?`已儲存「${p.name}」；時間軸動物：${animal.emoji} ${animal.name}。`:'已套用本次修改，但無法寫入瀏覽器；請先匯出備份。',persisted?'success':'warning');
+});
+$('projectCancel').onclick=resetProjectForm;
+$('projectAnimal').addEventListener('change',syncProjectAnimalPreview);
+$('projectAdminList').addEventListener('change',e=>{
+  const select=e.target.closest('select[data-project-animal]');
+  if(!select)return;
+  const project=projects.find(item=>item.id===select.dataset.projectAnimal);
+  if(!project)return;
+  project.animal=normalizeAnimal(select.value,project.id);
+  const chosen=animalFor(project);
+  // Keep a simultaneously open project edit form consistent without touching any other drafts.
+  if(editingProject===project.id){$('projectAnimal').value=project.animal;syncProjectAnimalPreview();}
+  const persisted=save();
+  renderTV();
+  const status=select.closest('.project-animal-settings').querySelector('.animal-save-status');
+  status.textContent=persisted?`已儲存：${chosen.emoji} ${chosen.name}`:'已套用，但尚未儲存；請匯出備份或再選一次重試。';
+  status.dataset.state=persisted?'success':'warning';
+});
+// Use the persisted array order for both the admin list and paginated TV view.
+function moveProject(sourceId,targetId,after=false){
+  const from=projects.findIndex(p=>p.id===sourceId);
+  const to=projects.findIndex(p=>p.id===targetId);
+  if(from<0||to<0||from===to)return;
+  const [item]=projects.splice(from,1);
+  let destination=projects.findIndex(p=>p.id===targetId);
+  if(after)destination++;
+  projects.splice(destination,0,item);
+  page=0;
+  const persisted=redraw();
+  const status=$('sortStatus');
+  status.textContent=persisted?'計畫順序已更新並儲存；電視畫面同步套用。':'已調整順序，但瀏覽器儲存失敗，請匯出備份。';
+  status.dataset.state=persisted?'success':'warning';
+}
+let draggedProjectId=null,armedProjectId=null;
+const sortList=$('projectAdminList');
+function clearSortMarkers(){sortList.querySelectorAll('.dragging,.drop-before,.drop-after').forEach(el=>el.classList.remove('dragging','drop-before','drop-after'));}
+sortList.addEventListener('pointerdown',e=>{
+  armedProjectId=e.target.closest('.drag-handle')?.closest('.project-admin')?.dataset.sortProject||null;
+});
+sortList.addEventListener('dragstart',e=>{
+  const card=e.target.closest('.project-admin');
+  // Only the grip initiates a drag, so buttons, text selection, inputs remain usable.
+  if(!card||armedProjectId!==card.dataset.sortProject){e.preventDefault();return;}
+  draggedProjectId=card.dataset.sortProject;
+  armedProjectId=null;
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',draggedProjectId);
+  card.classList.add('dragging');
+});
+sortList.addEventListener('dragover',e=>{
+  if(!draggedProjectId)return;
+  const card=e.target.closest('.project-admin');
+  if(!card||card.dataset.sortProject===draggedProjectId)return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  clearSortMarkers();
+  sortList.querySelector(`[data-sort-project="${CSS.escape(draggedProjectId)}"]`)?.classList.add('dragging');
+  card.classList.add(e.clientY<card.getBoundingClientRect().top+card.getBoundingClientRect().height/2?'drop-before':'drop-after');
+});
+sortList.addEventListener('drop',e=>{
+  if(!draggedProjectId)return;
+  e.preventDefault();
+  const card=e.target.closest('.project-admin');
+  const source=draggedProjectId;
+  const after=!!card?.classList.contains('drop-after');
+  draggedProjectId=null;
+  clearSortMarkers();
+  if(card)moveProject(source,card.dataset.sortProject,after);
+});
+sortList.addEventListener('dragend',()=>{draggedProjectId=null;armedProjectId=null;clearSortMarkers();});
+
+$('projectAdminList').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.sortUp||b.dataset.sortDown){
+    const id=b.dataset.sortUp||b.dataset.sortDown;
+    const index=projects.findIndex(p=>p.id===id);
+    const target=index+(b.dataset.sortUp?-1:1);
+    if(index>=0&&target>=0&&target<projects.length){
+      // Up: insert before the previous project. Down: insert after the next.
+      moveProject(id,projects[target].id,!!b.dataset.sortDown);
+    }
+    return;
+  }
+  if(b.dataset.projectEdit){
+    const p=projects.find(x=>x.id===b.dataset.projectEdit);if(!p)return;
+    editingProject=p.id;$('projectName').value=p.name;$('projectTagline').value=p.tagline||'';$('projectIcon').value=p.icon||'';$('projectAnimal').value=animalFor(p).id;syncProjectAnimalPreview();projectMessage('修改後請按「儲存修改」。');$('projectStart').value=p.start||'';$('projectEnd').value=p.end||'';
+    $('projectFormTitle').textContent='編輯計畫';$('projectSave').textContent='儲存修改';$('projectCancel').hidden=false;$('projectForm').closest('.panel').scrollIntoView({block:'start',behavior:'smooth'})
+  }
+  if(b.dataset.projectDelete){const p=projects.find(x=>x.id===b.dataset.projectDelete);if(p)ask(`確定刪除「${p.name}」及其所有活動？`,{ok:'刪除'}).then(ok=>{if(ok){projects=projects.filter(x=>x.id!==p.id);redraw()}})}
+  if(b.dataset.addMilestone){resetMilestoneForm();$('milestoneProject').value=b.dataset.addMilestone;window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}
+  if(b.dataset.milestoneEdit){
+    const [pid,mid]=b.dataset.milestoneEdit.split('|'),p=projects.find(x=>x.id===pid),m=p?.milestones.find(x=>x.id===mid);if(!m)return;
+    editingMilestone={pid,mid};$('milestoneProject').value=pid;$('milestoneName').value=m.name;$('milestoneDate').value=m.date;$('milestoneFormTitle').textContent='修改活動／報告日期';$('milestoneSave').textContent='儲存修改';$('milestoneCancel').hidden=false;window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})
+  }
+  if(b.dataset.milestoneDelete){const [pid,mid]=b.dataset.milestoneDelete.split('|'),p=projects.find(x=>x.id===pid);if(p)ask('確定刪除此活動？',{ok:'刪除'}).then(ok=>{if(ok){p.milestones=p.milestones.filter(x=>x.id!==mid);redraw()}})}
+});
+$('milestoneForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const pid=$('milestoneProject').value,p=projects.find(x=>x.id===pid);if(!p){notify('請先新增計畫。');return;}
+  const m={id:editingMilestone?.mid||uid(),name:$('milestoneName').value.trim(),date:$('milestoneDate').value};
+  if(editingMilestone){const oldp=projects.find(x=>x.id===editingMilestone.pid);oldp.milestones=oldp.milestones.filter(x=>x.id!==editingMilestone.mid);p.milestones.push(m)}
+  else p.milestones.push(m);
+  resetMilestoneForm();redraw();
+});
+$('milestoneCancel').onclick=resetMilestoneForm;
+
+function openAdmin(){
+  $('admin').classList.add('open');
+  document.body.classList.add('admin-mode');
+  restartTimer();
+  renderAdmin();
+  if(hasServer)pullBoard(false);
+}
+async function closeAdmin(){
+  if(tickerDirty){
+    const ok=await ask('跑馬燈有尚未儲存的變更。要先儲存再返回看板嗎？',{ok:'儲存並返回',cancel:'繼續編輯'});
+    if(!ok)return;
+    if(!saveTickerFromEditor())return;
+  }
+  $('admin').classList.remove('open');
+  document.body.classList.remove('admin-mode');
+  renderTV();
+  renderTicker();
+  restartTimer();
+}
+$('backTv').onclick=closeAdmin;
+$('adminEntry').onclick=openAdmin;
+$('titleEntry').addEventListener('dblclick',openAdmin);
+$('modalOk').onclick=()=>closeModal(true);
+$('modalCancel').onclick=()=>closeModal(false);
+$('modalBack').addEventListener('click',e=>{if(e.target===$('modalBack'))closeModal(false)});
+$('modalInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();closeModal(true)}});
+document.addEventListener('keydown',e=>{
+  if(!$('setup').hidden){if(e.key==='Escape'&&hasServer){e.preventDefault();$('setup').hidden=true;}return;}
+  if(isModalOpen()){
+    if(e.key==='Escape'){e.preventDefault();closeModal(false);}
+    return;
+  }
+  if((e.ctrlKey&&e.altKey&&e.key.toLowerCase()==='m')||e.key==='F2'){
+    e.preventDefault();isAdminOpen()?closeAdmin():openAdmin();
+  }else if(e.key==='Escape'&&isAdminOpen()){
+    e.preventDefault();closeAdmin();
+  }
+});
+window.addEventListener('beforeunload',e=>{
+  if(tickerDirty||pendingPersistence||dirtyRemote||pushing){e.preventDefault();e.returnValue='';}
+});
+
+$('font').oninput=()=>{settings.font=Number($('font').value);renderTV();save()};
+$('interval').onchange=()=>{settings.interval=Number($('interval').value);save();restartTimer()};
+$('overdueMode').onchange=()=>{settings.overdueMode=$('overdueMode').value;redraw()};
+$('tickerText').addEventListener('input',markTickerDirty);
+$('tickerSpeed').addEventListener('input',markTickerDirty);
+$('tickerForm').addEventListener('submit',e=>{e.preventDefault();saveTickerFromEditor();});
+$('cancelTicker').onclick=()=>{
+  syncTickerEditor(true);
+  tickerMessage(pendingPersistence?'已恢復目前套用內容；瀏覽器儲存仍未成功，請重試儲存或匯出備份。':'已取消修改，恢復先前套用的內容。',pendingPersistence?'warning':'info');
+};
+$('resetTicker').onclick=async()=>{
+  if(!await ask('確定以預設跑馬燈文字及播放時間取代目前內容？'))return;
+  $('tickerText').value=DEFAULT_TICKER.text;
+  $('tickerSpeed').value=DEFAULT_TICKER.speed;
+  markTickerDirty();
+  saveTickerFromEditor();
+};
+$('export').onclick=async()=>{
+  let backupTicker=tickerSettings;
+  if(tickerDirty){
+    if(!await ask('跑馬燈還有尚未儲存的變更。要將目前輸入一併匯出嗎？（不會變更看板設定）',{ok:'一併匯出',cancel:'繼續編輯'}))return;
+    backupTicker=readTickerDraft();
+  }
+  const data={projects,settings,tickerSettings:backupTicker};
+  const text=JSON.stringify(data,null,2),filename='計畫活動看板備份.json';
+  const blob=new Blob([text],{type:'application/json'});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download=filename;
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+$('import').onclick=()=>$('file').click();
+$('file').onchange=async e=>{
+  const selected=e.target.files&&e.target.files[0];
+  if(!selected)return;
+  try{
+    const x=JSON.parse(await selected.text());
+    if(!x||!Array.isArray(x.projects))throw new Error('Invalid backup');
+    const importedProjects=x.projects.map(normalizeProject);
+    const importedTicker=normalizeTickerSettings({...tickerSettings,...x.tickerSettings});
+    if(!await ask(`匯入備份會以檔案中的 ${importedProjects.length} 個計畫取代目前所有資料${hasServer?'，並同步到所有電視與電腦':''}。確定繼續？`,{ok:'匯入'}))return;
+    projects=importedProjects;
+    settings={...settings,...x.settings};
+    tickerSettings=importedTicker;
+    syncTickerEditor(true);
+    page=0;
+    const persisted=redraw();
+    renderTicker();
+    tickerMessage(persisted?'已匯入備份並儲存，包含跑馬燈文字與播放時間。':'已匯入到本次畫面，但無法寫入瀏覽器；請保留備份檔。',persisted?'success':'warning');
+  }catch(err){notify('匯入失敗，請使用本看板匯出的 JSON 備份。')}
+  finally{e.target.value='';}
+};
+
+$('projectAnimal').innerHTML=animalOptions('crab');
+syncProjectAnimalPreview();
+load();renderTV();renderAdmin();renderTicker();restartTimer();updateClock();
+if(hasServer){
+  setSync('pending','正在讀取伺服器上的看板資料…');
+  pullBoard(true);
+  // TV screens check for new data every 30 seconds, and whenever the screen wakes up.
+  setInterval(()=>{if(!isModalOpen())pullBoard(false)},30000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pullBoard(false)});
+}else{
+  setSync('local','單機模式：資料只存在這台裝置的瀏覽器。按「連線設定」連接試算表。');
+}
+// ?admin opens the back office directly (handy as a phone bookmark).
+if(URL_PARAMS.has('admin'))openAdmin();
+
+// ---------- Connection setup ----------
+function linkFor(api,admin){return location.origin+location.pathname+'?api='+encodeURIComponent(api)+(admin?'&admin':'')}
+function showSetup(){
+  $('setup').hidden=false;
+  $('apiInput').value=API_URL||'';
+  $('setupError').textContent='';
+  $('setupCancel').textContent=hasServer?'關閉':'先不用，單機使用';
+  if(hasServer){$('tvLink').value=linkFor(API_URL,false);$('adminLink').value=linkFor(API_URL,true);$('setupLinks').hidden=false;}
+  else $('setupLinks').hidden=true;
+  $('apiInput').focus();
+}
+$('setupForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const api=apiFrom($('apiInput').value);
+  if(!api){$('setupError').textContent='網址格式不對：請貼上部署後拿到、以 https://script.google.com/ 開頭、/exec 結尾的網址。';return;}
+  try{localStorage.setItem(API_KEY,api)}catch(err){}
+  location.replace(linkFor(api,isAdminOpen()||URL_PARAMS.has('admin')));
+});
+$('setupCancel').onclick=()=>{$('setup').hidden=true;try{sessionStorage.setItem('tv-setup-skipped','1')}catch(e){}};
+$('openSetup').onclick=showSetup;
+$('setup').addEventListener('click',async e=>{
+  const id=e.target.dataset&&e.target.dataset.copy;if(!id)return;
+  try{await navigator.clipboard.writeText($(id).value);e.target.textContent='已複製'}
+  catch(err){$(id).select();e.target.textContent='請手動複製'}
+  setTimeout(()=>{e.target.textContent='複製'},2000);
+});
+let skipped=false;try{skipped=!!sessionStorage.getItem('tv-setup-skipped')}catch(e){}
+if(!hasServer&&!skipped)showSetup();
+else if(hasServer&&URL_PARAMS.get('api')){try{localStorage.setItem(API_KEY,API_URL)}catch(e){}}
+setInterval(updateClock,1000);
+// Date refresh must never refresh or replace an in-progress editor.
+setInterval(()=>{if(!isAdminOpen())renderTV();},60000);
+window.addEventListener('resize',()=>queueTickerLayout());
+if('ResizeObserver' in window){
+  tickerResizeObserver=new ResizeObserver(()=>queueTickerLayout());
+  tickerResizeObserver.observe(document.querySelector('.ticker-track'));
+}
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(()=>queueTickerLayout(true));
+}
+})();
+</script>
+</body>
+</html>
